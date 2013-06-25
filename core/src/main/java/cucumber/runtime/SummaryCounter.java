@@ -4,6 +4,7 @@ import gherkin.formatter.AnsiFormats;
 import gherkin.formatter.Format;
 import gherkin.formatter.Formats;
 import gherkin.formatter.MonochromeFormats;
+import gherkin.formatter.NiceAppendable;
 import gherkin.formatter.model.Result;
 
 import java.io.PrintStream;
@@ -45,45 +46,75 @@ public class SummaryCounter {
         printDuration(out);
     }
 
+    public Summary getSummary() {
+        if (stepSubCounts.getTotal() == 0) {
+            return new Summary("0 Scenarios", "0 Steps", "0m0.000s");
+        } else {
+            Formats formats = new MonochromeFormats();
+            Appendable scenarios = new StringBuilder();
+            Appendable steps = new StringBuilder();
+            Appendable duration = new StringBuilder();
+            appendScenarioCounts(new NiceAppendable(scenarios), formats);
+            appendStepCounts(new NiceAppendable(steps), formats);
+            appendDuration(new NiceAppendable(duration));
+            return new Summary(scenarios.toString(), steps.toString(), duration.toString());
+        }
+    }
+
     private void printStepCounts(PrintStream out) {
-        out.print(stepSubCounts.getTotal());
-        out.print(" Steps (");
-        printSubCounts(out, stepSubCounts);
-        out.println(")");
+        appendStepCounts(new NiceAppendable(out), formats);
+        out.println("");
+    }
+
+    private void appendStepCounts(NiceAppendable out, Formats formats) {
+        out.append(Integer.toString(stepSubCounts.getTotal()));
+        out.append(" Steps (");
+        appendSubCounts(out, stepSubCounts, formats);
+        out.append(")");
     }
 
     private void printScenarioCounts(PrintStream out) {
-        out.print(scenarioSubCounts.getTotal());
-        out.print(" Scenarios (");
-        printSubCounts(out, scenarioSubCounts);
-        out.println(")");
+        appendScenarioCounts(new NiceAppendable(out), formats);
+        out.println("");
     }
 
-    private void printSubCounts(PrintStream out, SubCounts subCounts) {
+    private void appendScenarioCounts(NiceAppendable out, Formats formats) {
+        out.append(Integer.toString(scenarioSubCounts.getTotal()));
+        out.append(" Scenarios (");
+        appendSubCounts(out, scenarioSubCounts, formats);
+        out.append(")");
+    }
+
+    private void appendSubCounts(NiceAppendable out, SubCounts subCounts, Formats formats) {
         boolean addComma = false;
-        addComma = printSubCount(out, subCounts.failed, Result.FAILED, addComma);
-        addComma = printSubCount(out, subCounts.skipped, Result.SKIPPED.getStatus(), addComma);
-        addComma = printSubCount(out, subCounts.pending, PENDING, addComma);
-        addComma = printSubCount(out, subCounts.undefined, Result.UNDEFINED.getStatus(), addComma);
-        addComma = printSubCount(out, subCounts.passed, Result.PASSED, addComma);
+        addComma = appendSubCount(out, subCounts.failed, Result.FAILED, addComma, formats);
+        addComma = appendSubCount(out, subCounts.skipped, Result.SKIPPED.getStatus(), addComma, formats);
+        addComma = appendSubCount(out, subCounts.pending, PENDING, addComma, formats);
+        addComma = appendSubCount(out, subCounts.undefined, Result.UNDEFINED.getStatus(), addComma, formats);
+        addComma = appendSubCount(out, subCounts.passed, Result.PASSED, addComma, formats);
     }
 
-    private boolean printSubCount(PrintStream out, int count, String type, boolean addComma) {
+    private boolean appendSubCount(NiceAppendable out, int count, String type, boolean addComma, Formats formats) {
         if (count != 0) {
             if (addComma) {
-                out.print(", ");
+                out.append(", ");
             }
             Format format = formats.get(type);
-            out.print(format.text(count + " " + type));
+            out.append(format.text(count + " " + type));
             addComma = true;
         }
         return addComma;
     }
 
     private void printDuration(PrintStream out) {
-        out.print(String.format("%dm", (totalDuration/ONE_MINUTE)));
+        appendDuration(new NiceAppendable(out));
+        out.println("");
+    }
+
+    private void appendDuration(NiceAppendable out) {
+        out.append(String.format("%dm", (totalDuration/ONE_MINUTE)));
         DecimalFormat format = new DecimalFormat("0.000", new DecimalFormatSymbols(locale));
-        out.println(format.format(((double)(totalDuration%ONE_MINUTE))/ONE_SECOND) + "s");
+        out.append(format.format(((double)(totalDuration%ONE_MINUTE))/ONE_SECOND) + "s");
     }
 
     public void addStep(Result result) {

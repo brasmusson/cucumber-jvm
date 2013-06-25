@@ -1,5 +1,6 @@
 package cucumber.runtime.formatter;
 
+import cucumber.runtime.SummaryCounter;
 import cucumber.runtime.Utils;
 import gherkin.formatter.model.Comment;
 import gherkin.formatter.model.Scenario;
@@ -19,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -67,14 +70,30 @@ public class HTMLFormatterTest {
         assertContains("formatter.embedding(\"image/png\", \"embedded0.png\");", reportJs);
     }
 
+    @Test
+    public void includes_summary() throws IOException {
+        String reportJs = FixJava.readReader(new InputStreamReader(new URL(outputDir, "report.js").openStream(), "UTF-8"));
+        assertContains("formatter.summary(", reportJs);
+        assertContainsRegex("\"scenarios\": \"\\d+ Scenarios.*?\"", reportJs);
+        assertContainsRegex("\"steps\": \"\\d+ Steps.*?\"", reportJs);
+        assertContainsRegex("\"duration\": \"\\d+m\\d+\\.\\d\\d\\ds\"", reportJs);
+    }
+
     private void assertContains(String substring, String string) {
         if (string.indexOf(substring) == -1) {
             fail(String.format("[%s] not contained in [%s]", substring, string));
         }
     }
 
+    private void assertContainsRegex(String regex, String reportJs) {
+        Pattern scenarioPattern = Pattern.compile(regex);
+        Matcher scenarioMatcher = scenarioPattern.matcher(reportJs);
+        assertTrue(String.format("[%s] not contained in [%s]", regex, reportJs), scenarioMatcher.find());
+    }
+
     private void runFeaturesWithFormatter(URL outputDir) throws IOException {
         final HTMLFormatter f = new HTMLFormatter(outputDir);
+        f.setSummaryCounter(new SummaryCounter(false));
         f.uri("some\\windows\\path\\some.feature");
         f.scenario(new Scenario(Collections.<Comment>emptyList(), Collections.<Tag>emptyList(), "Scenario", "some cukes", "", 10, "id"));
         f.embedding("image/png", "fakedata".getBytes("US-ASCII"));

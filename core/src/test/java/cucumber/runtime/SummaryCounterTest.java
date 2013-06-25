@@ -1,5 +1,6 @@
 package cucumber.runtime;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -10,6 +11,7 @@ import gherkin.formatter.model.Result;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Locale;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -151,6 +153,22 @@ public class SummaryCounterTest {
 
         assertThat(baos.toString(), endsWith(String.format(
                 "1m1,001s%n")));
+    }
+
+    @Test
+    public void should_create_summary_object() {
+        SummaryCounter counter = createColorSummaryCounter();
+
+        addOneStepScenario(counter, Result.PASSED);
+        addOneStepScenario(counter, Result.FAILED);
+        addOneStepScenario(counter, SummaryCounter.PENDING);
+        addOneStepScenario(counter, Result.UNDEFINED.getStatus());
+        addOneStepScenario(counter, Result.SKIPPED.getStatus());
+        Map<String, Object> summaryMap = counter.getSummary().toMap();
+
+        assertEquals("5 Scenarios (1 failed, 1 skipped, 1 pending, 1 undefined, 1 passed)", summaryMap.get("scenarios"));
+        assertEquals("5 Steps (1 failed, 1 skipped, 1 pending, 1 undefined, 1 passed)", summaryMap.get("steps"));
+        assertEquals("0m0.000s", summaryMap.get("duration"));
     }
 
     private void addOneStepScenario(SummaryCounter counter, String status) {

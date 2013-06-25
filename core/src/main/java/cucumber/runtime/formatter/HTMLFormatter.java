@@ -1,6 +1,7 @@
 package cucumber.runtime.formatter;
 
 import cucumber.runtime.CucumberException;
+import cucumber.runtime.SummaryCounter;
 import cucumber.runtime.io.URLOutputStream;
 import gherkin.deps.com.google.gson.Gson;
 import gherkin.deps.com.google.gson.GsonBuilder;
@@ -27,7 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class HTMLFormatter implements Formatter, Reporter {
+class HTMLFormatter implements Formatter, Reporter, SummaryAware {
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static final String JS_FORMATTER_VAR = "formatter";
     private static final String JS_REPORT_FILENAME = "report.js";
@@ -47,6 +48,7 @@ class HTMLFormatter implements Formatter, Reporter {
 
     private boolean firstFeature = true;
     private int embeddedIndex;
+    private SummaryCounter summaryCounter;
 
     public HTMLFormatter(URL htmlReportDir) {
         this.htmlReportDir = htmlReportDir;
@@ -103,6 +105,9 @@ class HTMLFormatter implements Formatter, Reporter {
     @Override
     public void done() {
         if (!firstFeature) {
+            if (summaryCounter != null) {
+                jsFunctionCall("summary", summaryCounter.getSummary());
+            }
             jsOut().append("});");
             copyReportFiles();
         }
@@ -214,6 +219,11 @@ class HTMLFormatter implements Formatter, Reporter {
         } catch (IOException e) {
             throw new CucumberException(e);
         }
+    }
+
+    @Override
+    public void setSummaryCounter(SummaryCounter counter) {
+        summaryCounter = counter;
     }
 
 }
