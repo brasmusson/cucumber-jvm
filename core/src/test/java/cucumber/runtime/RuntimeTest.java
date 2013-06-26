@@ -2,10 +2,13 @@ package cucumber.runtime;
 
 import cucumber.api.PendingException;
 import cucumber.api.Scenario;
+import cucumber.runtime.formatter.FormatterFactory;
+import cucumber.runtime.formatter.SummaryAware;
 import cucumber.runtime.io.ClasspathResourceLoader;
 import cucumber.runtime.io.ResourceLoader;
 import cucumber.runtime.model.CucumberFeature;
 import gherkin.I18n;
+import gherkin.formatter.Formatter;
 import gherkin.formatter.JSONFormatter;
 import gherkin.formatter.Reporter;
 import gherkin.formatter.model.Step;
@@ -31,7 +34,9 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyCollectionOf;
 import static org.mockito.Matchers.anyString;
@@ -329,6 +334,17 @@ public class RuntimeTest {
                 "1 Steps (1 passed)%n")));
    }
 
+    @Test
+    public void should_send_summary_counter_to_summary_aware_formatters() throws Exception {
+        FormatterFactory factory = mock(FormatterFactory.class);
+        Formatter summaryAwareFormatter = mock(Formatter.class, withSettings().extraInterfaces(SummaryAware.class));
+        when(factory.create("html:out/dir")).thenReturn(summaryAwareFormatter);
+
+        createRuntime(new RuntimeOptions(new Properties(), factory, "--format", "html:out/dir"));
+
+        verify((SummaryAware)summaryAwareFormatter).setSummaryCounter((SummaryCounter)any());
+    }
+
     private StepDefinitionMatch createExceptionThrowingMatch(Exception exception) throws Throwable {
         StepDefinitionMatch match = mock(StepDefinitionMatch.class);
         doThrow(exception).when(match).runStep((I18n)any());
@@ -357,9 +373,12 @@ public class RuntimeTest {
     }
 
     private Runtime createRuntime(String... runtimeArgs) {
+        return createRuntime(new RuntimeOptions(new Properties(), runtimeArgs));
+    }
+
+    private Runtime createRuntime(RuntimeOptions runtimeOptions) {
         ResourceLoader resourceLoader = mock(ResourceLoader.class);
         ClassLoader classLoader = mock(ClassLoader.class);
-        RuntimeOptions runtimeOptions = new RuntimeOptions(new Properties(), runtimeArgs);
         Backend backend = mock(Backend.class);
         Collection<Backend> backends = Arrays.asList(backend);
 

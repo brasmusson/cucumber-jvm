@@ -31,7 +31,7 @@ public class RuntimeOptions {
     public final List<Object> filters = new ArrayList<Object>();
     public final List<Formatter> formatters = new ArrayList<Formatter>();
     public final List<String> featurePaths = new ArrayList<String>();
-    private final FormatterFactory formatterFactory = new FormatterFactory();
+    private final FormatterFactory formatterFactory;
     public URL dotCucumber;
     public boolean dryRun;
     public boolean strict = false;
@@ -39,6 +39,11 @@ public class RuntimeOptions {
 
     public RuntimeOptions(Properties properties, String... argv) {
         /* IMPORTANT! Make sure USAGE.txt is always uptodate if this class changes */
+        this(properties, new FormatterFactory(), argv);
+    }
+
+    RuntimeOptions(Properties properties, FormatterFactory formatterFactory, String... argv) {
+        this.formatterFactory = formatterFactory;
 
         parse(new ArrayList<String>(asList(argv)));
         if (properties.containsKey("cucumber.options")) {

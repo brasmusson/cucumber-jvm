@@ -1,6 +1,7 @@
 package cucumber.runtime;
 
 import cucumber.api.Pending;
+import cucumber.runtime.formatter.SummaryAware;
 import cucumber.runtime.io.ClasspathResourceLoader;
 import cucumber.runtime.io.ResourceLoader;
 import cucumber.runtime.model.CucumberFeature;
@@ -79,6 +80,12 @@ public class Runtime implements UnreportedStepExecutor {
             backend.loadGlue(glue, runtimeOptions.glue);
             backend.setUnreportedStepExecutor(this);
         }
+        for (Formatter formatter : runtimeOptions.formatters) {
+            if (formatter instanceof SummaryAware) {
+                ((SummaryAware)formatter).setSummaryCounter(summaryCounter);
+            }
+        }
+
     }
 
     private static Collection<? extends Backend> loadBackends(ResourceLoader resourceLoader, ClassLoader classLoader) {
