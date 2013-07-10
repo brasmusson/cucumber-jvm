@@ -64,7 +64,7 @@ public class JSONPrettyFormatterTest {
     }
 
     private String convertToPlatformJsonPath(String path, String fileSeparator) {
-        return path.replace("/", fileSeparator);
+        return path.replace("/", fileSeparator).replace("\\", "\\\\");
     }
 
 }
