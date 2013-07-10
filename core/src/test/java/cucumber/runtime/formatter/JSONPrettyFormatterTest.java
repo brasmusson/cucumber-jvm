@@ -26,10 +26,23 @@ public class JSONPrettyFormatterTest {
     public void featureWithOutlineTest() throws Exception {
         File report = runFeaturesWithJSONPrettyFormatter(asList("cucumber/runtime/formatter/JSONPrettyFormatterTest.feature"));
         String expected = new Scanner(getClass().getResourceAsStream("JSONPrettyFormatterTest.json"), "UTF-8").useDelimiter("\\A").next();
-        expected = expected.replace("cucumber/runtime/formatter/JSONPrettyFormatterTest.feature", "cucumber" + File.separator + "runtime"
-                + File.separator + "formatter" + File.separator + "JSONPrettyFormatterTest.feature");
+        expected = expected.replace("cucumber/runtime/formatter/JSONPrettyFormatterTest.feature",
+                convertToPlatformJsonPath("cucumber/runtime/formatter/JSONPrettyFormatterTest.feature", File.separator));
         String actual = new Scanner(report, "UTF-8").useDelimiter("\\A").next();
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void convertToPlatformJsonPath_shouldWorkOnAllPlatforms() throws Exception {
+        String fileSeparatorOnWindows = "\\";
+        String fileSeparatorOnLinux = "/";
+        String pathInJsonFileOnWindows =
+                new String(new char[]{'p', 'a', 't', 'h', '\\', '\\', 'f', 'i', 'l', 'e', '.', 'f', 'e', 'a', 't', 'u', 'r', 'e'});
+        String pathInJsonFileOnLinux =
+                new String(new char[]{'p', 'a', 't', 'h', '/', 'f', 'i', 'l', 'e', '.', 'f', 'e', 'a', 't', 'u', 'r', 'e'});
+
+        assertEquals(pathInJsonFileOnLinux, convertToPlatformJsonPath("path/file.feature", fileSeparatorOnLinux));
+        assertEquals(pathInJsonFileOnWindows, convertToPlatformJsonPath("path/file.feature", fileSeparatorOnWindows));
     }
 
     private File runFeaturesWithJSONPrettyFormatter(final List<String> featurePaths) throws IOException {
@@ -48,6 +61,10 @@ public class JSONPrettyFormatterTest {
         final cucumber.runtime.Runtime runtime = new Runtime(resourceLoader, classLoader, asList(backend), runtimeOptions);
         runtime.run();
         return report;
+    }
+
+    private String convertToPlatformJsonPath(String path, String fileSeparator) {
+        return path.replace("/", fileSeparator);
     }
 
 }
