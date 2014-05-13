@@ -9,4 +9,6 @@
 
     <import resource="classpath*:/applicationContext.xml"/>
 
+    <bean id="transactionManager" class="cucumber.runtime.java.spring.PlatformTransactionManagerImpl" scope="cucumber-glue"/>
+
 </beans>
